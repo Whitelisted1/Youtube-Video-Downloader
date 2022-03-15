@@ -4,13 +4,11 @@
 # How to use
 - Simply follow the instructions in the application once you run it
 
-# Config
-- You can make the youtube videos download in the background by creating a file called "async.txt" and making the contents "True" 
-- Asynchronous is not recommended since when closing the window, it will also close the background downloads
-
 # Releases
 - Pyinstaller is often used for python-based viruses. This makes some antivirus programs flag it since it has a similar build.
 
+# Help
+- PyTube recently had an update that fixed a bug that made it so you couldn't download videos. You can fix it by following the instructions here: https://stackoverflow.com/a/67631349/16411469
 
 # NOTICE
-- Downloading copyrighted videos from youtube.com may get you into problems if you choose to reupload to websites. I am not responsible for any trouble that you get into with this program.
+- Downloading copyrighted videos from youtube.com may get you into trouble. I am not responsible for anything that happens to you with this program.
