@@ -1,48 +1,28 @@
 from pytube import YouTube, Playlist
 from os.path import dirname, join, isdir
 from sys import argv
+from threading import Thread
 
 directory = dirname(argv[0])
 
-open(join(directory, "async.txt"), "a").close()
-f = open(join(directory, "async.txt"), "r")
-asyncenabled = f.read()
-f.close()
-if asyncenabled == "":
-    f = open(join(directory, "async.txt"), "w")
-    f.write("False")
-    f.close()
-
-asyncenabled = asyncenabled.replace(" ", "")
-if asyncenabled == "True" or asyncenabled == "true" or asyncenabled == "1":
-    asyncenabled = True
-    from threading import Thread
-else:
-    asyncenabled = False
-
+asyncenabled = False
 if not isdir(join(directory, "videos")):
     from os import mkdir
     mkdir(join(directory, "videos"))
 
-
-def asyncdownloadvid(video, audioOnly):
-    if not audioOnly:
-        YouTube(video).streams.get_highest_resolution().download(join(directory, "videos"))
-    else:
-        yt = YouTube(video)
-        t=yt.streams.filter(only_audio=True)
-        t[0].download(join(directory, "videos"))
-
-def downloadvid(video, audioOnly):
-    if not asyncenabled:
+def downloadvid(video, audioOnly, quality, threaded=False):
+    if not asyncenabled or threaded:
         if not audioOnly:
-            YouTube(video).streams.get_highest_resolution().download(join(directory, "videos"))
+            if quality != 'highest':
+                YouTube(video).streams.get_by_resolution(quality).download(join(directory, "videos"))
+            elif quality == "highest":
+                YouTube(video).streams.get_highest_resolution().download(join(directory, "videos"))
         else:
             yt = YouTube(video)
             t=yt.streams.filter(only_audio=True)
             t[0].download(join(directory, "videos"))
     else:
-        Thread(target=asyncdownloadvid, args=(video, audioOnly)).start()
+        Thread(target=downloadvid, args=(video, audioOnly, quality, True)).start()
 
 def main():
     while True:
@@ -64,29 +44,49 @@ def main():
             break
         elif userinput == "2":
             audio = True
+            quality = None
             break
         else:
             print("That is not a correct input value!")
+    
+    if not audio:
+        while True:
+            quality = None
+            userinput = input("\nWhat would you like the video quality to be?\n1) Highest\n2) 1080p\n3) 720p\n4) 360p\n$ ")
+            if userinput == '1':
+                quality = 'highest'
+                break
+            elif userinput == '2':
+                quality == '1080p'
+                break
+            elif userinput == '3':
+                quality == '720p'
+                break
+            elif userinput == '4':
+                quality == '360p'
+                break
+            else:
+                print(f"'{userinput}' is not a legal input!")
 
     printdone = True
     if section == "1":
         try:
-            video = input("Please enter the full video URL (Example: https://www.youtube.com/watch?v=dQw4w9WgXcQ)\n$ ")
+            video = input("\nPlease enter the full video URL (Example: https://www.youtube.com/watch?v=dQw4w9WgXcQ)\n$ ")
             print("Downloading video...")
-            downloadvid(video, audio)
+            downloadvid(video, audio, quality)
         except Exception as e:
             print(e)
             print("An error occured. (Invalid link?)")
             printdone = False
     elif section == "2":
         try:
-            playlist = input("Please enter the playlist URL (Example: https://www.youtube.com/playlist?list=PLyDpmmtP4fWVoj8HaQffdDrGCuUX_52tn)\n$ ")
+            playlist = input("\nPlease enter the playlist URL (Example: https://www.youtube.com/playlist?list=PLyDpmmtP4fWVoj8HaQffdDrGCuUX_52tn)\n$ ")
             playlist = Playlist(playlist)
             playlistlen = len(playlist.video_urls)
             print(f'Number of videos in playlist: {playlistlen}')
             done = 0
             for video_url in playlist.video_urls:
-                downloadvid(video_url, audio)
+                downloadvid(video_url, audio, None)
                 done += 1
                 print(f'Downloaded {video_url} ({done}/{playlistlen})', end="\r")
         except Exception as e:
@@ -94,10 +94,8 @@ def main():
             print("An error occured. (Invalid link?)")
             printdone = False
     
-    if printdone and not asyncenabled:
-        print("Done downloading video(s)")
-    elif asyncenabled:
-        print("\nDownloading video(s) in the background..")
+    if printdone and not asyncenabled: print("\nDone downloading video(s)")
+    elif asyncenabled: print("\nDownloading video(s) in the background..")
     main()
 
 
